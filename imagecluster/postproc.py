@@ -75,14 +75,12 @@ def make_links(clusters, cluster_dr):
     cluster_dr : str
         path
     """
-    print("cluster dir: {}".format(cluster_dr))
+    print(f"cluster dir: {cluster_dr}")
     if os.path.exists(cluster_dr):
         shutil.rmtree(cluster_dr)
     for csize, group in clusters.items():
         for iclus, cluster in enumerate(group):
-            dr = pj(cluster_dr,
-                    'cluster_with_{}'.format(csize),
-                    'cluster_{}'.format(iclus))
+            dr = pj(cluster_dr, f'cluster_with_{csize}', f'cluster_{iclus}')
             for fn in cluster:
                 link = pj(dr, os.path.basename(fn))
                 os.makedirs(os.path.dirname(link), exist_ok=True)

@@ -45,7 +45,7 @@ def get_files(imagedir, ext='jpg|jpeg|bmp|png'):
     list
         list of file names
     """
-    rex = re.compile(r'^.*\.({})$'.format(ext), re.I)
+    rex = re.compile(f'^.*\.({ext})$', re.I)
     return [os.path.join(imagedir,base) for base in os.listdir(imagedir)
             if rex.match(base)]
 
@@ -84,9 +84,10 @@ def exif_timestamp(filename):
     # '2019:03:10 22:42:42' -> ['2019', '03', '10', '22', '42', '42']
     date_time_str = date_time.replace(':', ' ').split()
     names = ('year', 'month', 'day', 'hour', 'minute', 'second')
-    stamp = datetime.datetime(**{nn:int(vv) for nn,vv in zip(names,date_time_str)},
-                              tzinfo=datetime.timezone.utc).timestamp()
-    return stamp
+    return datetime.datetime(
+        **{nn: int(vv) for nn, vv in zip(names, date_time_str)},
+        tzinfo=datetime.timezone.utc
+    ).timestamp()
 
 
 def stat_timestamp(filename):
@@ -259,7 +260,7 @@ def get_image_data(imagedir, model_kwds=dict(layer='fc2'),
         if pca_kwds is not None:
             fingerprints = ic.pca(fingerprints, **pca_kwds)
         write_pk(fingerprints, fingerprints_fn)
-    print(f"reading timestamps ...")
+    print("reading timestamps ...")
     if timestamps_kwds is not None:
         timestamps = read_timestamps(imagedir, **timestamps_kwds)
     return images, fingerprints, timestamps

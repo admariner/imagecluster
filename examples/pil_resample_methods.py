@@ -64,13 +64,13 @@ nn = 224
 nmeth = 4
 imgs = np.empty((nmeth, nn, nn))
 timings = []
+stmt = "np.array(im.convert('L').resize((nn,nn), method), dtype=float)"
 for method in range(nmeth):
-    stmt = "np.array(im.convert('L').resize((nn,nn), method), dtype=float)"
     ctx = dict(im=im, method=method, nn=nn, np=np)
     timings.append(min(timeit.repeat(stmt, number=20, repeat=5, globals=ctx)))
     arr = eval(stmt)
     ax.matshow(arr, cmap=cm.gray)
-    fig.savefig('method_{}.png'.format(method))
+    fig.savefig(f'method_{method}.png')
     ax.cla()
     imgs[method,...] = arr
 

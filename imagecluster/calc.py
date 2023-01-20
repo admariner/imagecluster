@@ -44,9 +44,9 @@ def get_model(layer='fc2'):
             predictions (Dense)          (None, 1000)              4097000
     """
     base_model = VGG16(weights='imagenet', include_top=True)
-    model = Model(inputs=base_model.input,
-                  outputs=base_model.get_layer(layer).output)
-    return model
+    return Model(
+        inputs=base_model.input, outputs=base_model.get_layer(layer).output
+    )
 
 
 def fingerprint(image, model):
@@ -152,7 +152,7 @@ def pca(fingerprints, n_components=0.9, **kwds):
     _fingerprints = OrderedDict(fingerprints)
     X = np.array(list(_fingerprints.values()))
     Xp = PCA(**kwds).fit(X).transform(X)
-    return {k:v for k,v in zip(_fingerprints.keys(), Xp)}
+    return dict(zip(_fingerprints.keys(), Xp))
 
 
 def cluster(fingerprints, sim=0.5, timestamps=None, alpha=0.3, method='average',
@@ -217,8 +217,9 @@ def cluster(fingerprints, sim=0.5, timestamps=None, alpha=0.3, method='average',
         set_files = set(files)
         set_tsfiles = set(timestamps.keys())
         set_diff = set_files.symmetric_difference(set_tsfiles)
-        assert len(set_diff) == 0, (f"files in fingerprints and timestamps do "
-                                    f"not match: diff={set_diff}")
+        assert (
+            not set_diff
+        ), f"files in fingerprints and timestamps do not match: diff={set_diff}"
         # use 'files' to make sure we have the same order as in 'fingerprints'
         tsarr = np.array([timestamps[k] for k in files])[:,None]
         dts = distance.pdist(tsarr, metric)
@@ -231,7 +232,7 @@ def cluster(fingerprints, sim=0.5, timestamps=None, alpha=0.3, method='average',
     # cut dendrogram, extract clusters
     # cut=[12,  3, 29, 14, 28, 27,...]: image i belongs to cluster cut[i]
     cut = hierarchy.fcluster(Z, t=dfps.max()*(1.0-sim), criterion='distance')
-    cluster_dct = dict((iclus, []) for iclus in np.unique(cut))
+    cluster_dct = {iclus: [] for iclus in np.unique(cut)}
     for iimg,iclus in enumerate(cut):
         cluster_dct[iclus].append(files[iimg])
     # group all clusters (cluster = list_of_files) of equal size together
@@ -242,17 +243,16 @@ def cluster(fingerprints, sim=0.5, timestamps=None, alpha=0.3, method='average',
     for cluster in cluster_dct.values():
         csize = len(cluster)
         if csize >= min_csize:
-            if not (csize in clusters.keys()):
+            if csize not in clusters:
                 clusters[csize] = [cluster]
             else:
                 clusters[csize].append(cluster)
     if print_stats:
         print_cluster_stats(clusters)
-    if extra_out:
-        extra = {'Z': Z, 'dfps': dfps, 'cluster_dct': cluster_dct, 'cut': cut}
-        return clusters, extra
-    else:
+    if not extra_out:
         return clusters
+    extra = {'Z': Z, 'dfps': dfps, 'cluster_dct': cluster_dct, 'cut': cut}
+    return clusters, extra
 
 
 def cluster_stats(clusters):
@@ -285,8 +285,5 @@ def print_cluster_stats(clusters):
     stats = cluster_stats(clusters)
     for csize,cnum in stats:
         print(f"{csize} : {cnum}")
-    if stats.shape[0] > 0:
-        nimg = stats.prod(axis=1).sum()
-    else:
-        nimg = 0
+    nimg = stats.prod(axis=1).sum() if stats.shape[0] > 0 else 0
     print("#images in clusters total: ", nimg)
